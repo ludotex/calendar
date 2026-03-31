@@ -172,14 +172,14 @@ function createDayDiv(dateStr,label){
     applyCell(dayDiv);
   };
 
-  const moveDrag = (ev)=>{
-    if(!selecting) return;
-    const touch = ev.touches ? ev.touches[0] : null;
-    const x = touch ? touch.clientX : ev.clientX;
-    const y = touch ? touch.clientY : ev.clientY;
-    const el = document.elementFromPoint(x,y);
-    if(el && el.classList.contains('day')) applyCell(el);
-  };
+const moveDrag = (ev) => {
+  if (!selecting) return;
+  const touch = ev.touches ? ev.touches[0] : null;
+  const x = touch ? touch.clientX : ev.clientX;
+  const y = touch ? touch.clientY : ev.clientY;
+  const el = document.elementFromPoint(x, y)?.closest('.day'); // <- fixed here
+  if (el) applyCell(el);
+};
 
   const endDrag = ()=>{
     if(selecting){
