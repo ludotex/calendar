@@ -5,23 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kids Schedule</title>
 <style>
-body { font-family: Arial, sans-serif; background:#b0b0b0; margin:0; padding:10px; }
+body { font-family: Arial,sans-serif; margin:0; padding:10px; background:#b0b0b0; }
 .container { max-width:900px; margin:auto; }
 h1 { text-align:center; font-size:1.8em; }
 .card { background:white; padding:10px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.08); margin-bottom:10px; }
 .row { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 select { padding:6px; border-radius:8px; border:1px solid #ccc; width:100%; font-size:0.85em; }
 .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.day { width:100%; height:50px; border-radius:6px; font-size:11px; position:relative; user-select:none; box-sizing:border-box; background:white; display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-start; padding:2px; cursor:pointer; }
-.day-number { font-weight:bold; font-size:0.8em; margin-bottom:2px; z-index:2; }
-.event { width:100%; height:100%; border-radius:8px; position:absolute; top:0; left:0; z-index:1; pointer-events:none; }
+.day { width:100%; height:50px; border-radius:6px; font-size:11px; display:flex; justify-content:center; align-items:center; user-select:none; cursor:pointer; background:white; }
+.day-number { position:absolute; top:2px; left:2px; font-weight:bold; font-size:0.8em; }
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
 .weekday-row { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-weight:bold; margin-bottom:2px; font-size:0.8em; }
 #yearViewContainer { display:flex; flex-direction:column; gap:2px; margin-bottom:20px; font-size:0.7em; }
 .month-label { margin-bottom:2px; font-weight:bold; width:30px; flex-shrink:0; }
 .week-square { width:10px; height:15px; margin-right:1px; display:inline-block; }
-@media (max-width:500px){
-  .day { height:40px; font-size:10px; padding:1px; }
+@media(max-width:500px){
+  .day { height:40px; font-size:10px; }
   .day-number { font-size:0.7em; }
   .week-square { width:6px; height:10px; margin-right:0.5px; }
   .month-label { width:25px; font-size:0.65em; }
@@ -104,14 +103,9 @@ window.next = function(){ currentMonth.setDate(1); currentMonth.setMonth(current
 function toggleCell(date,parent){
   const idx = events.findIndex(e=>e.date===date);
   if(idx>=0){
-    if(events[idx].parent===parent){ 
-      events.splice(idx,1); // erase same parent
-    } else { 
-      events[idx].parent=parent; // replace other parent
-    }
-  } else {
-    events.push({date,parent}); // add new
-  }
+    if(events[idx].parent===parent) events.splice(idx,1); // erase same parent
+    else events[idx].parent=parent; // replace other parent
+  } else events.push({date,parent}); // add new
 }
 
 // Render month
@@ -119,14 +113,14 @@ function renderMonth(){
   calendarEl.innerHTML="";
   weekdayRow.innerHTML="";
   weekdays.forEach(d=>{
-    const div=document.createElement('div');
-    div.textContent=d;
+    const div=document.createElement('div'); div.textContent=d;
     weekdayRow.appendChild(div);
   });
 
   const year=currentMonth.getFullYear();
   const month=currentMonth.getMonth();
   monthLabel.textContent=currentMonth.toLocaleString('default',{month:'long',year:'numeric'});
+
   const firstDay=new Date(year,month,1).getDay();
   const startOffset=(firstDay+6)%7;
   const daysInMonth=new Date(year,month+1,0).getDate();
@@ -139,69 +133,52 @@ function renderMonth(){
   }
 }
 
-// Create day cell with drag
+// Create day cell
 function createDayDiv(dateStr,label){
-  const dayDiv=document.createElement('div'); 
-  dayDiv.classList.add('day'); 
+  const dayDiv=document.createElement('div');
+  dayDiv.classList.add('day');
   dayDiv.dataset.date=dateStr;
 
-  const dayNumber=document.createElement('div'); 
-  dayNumber.classList.add('day-number'); 
-  dayNumber.textContent=label; 
+  const dayNumber=document.createElement('div');
+  dayNumber.classList.add('day-number');
+  dayNumber.textContent=label;
   dayDiv.appendChild(dayNumber);
 
   const evData = events.find(e=>e.date===dateStr);
   if(evData){
-    const ev=document.createElement("div"); 
-    ev.className=`event ${evData.parent}`; 
-    dayDiv.appendChild(ev);
+    dayDiv.style.background = evData.parent==='A'?'#ef4444':'#3b82f6';
   }
 
   const applyCell = (cell)=>{
-    if(!dragParent || !cell.classList.contains('day')) return;
-    toggleCell(cell.dataset.date, dragParent);
-    renderYearView(); 
+    const parent=dragParent;
+    if(!parent) return;
+    toggleCell(cell.dataset.date,parent);
+    const e = events.find(ev=>ev.date===cell.dataset.date);
+    if(e) cell.style.background = e.parent==='A'?'#ef4444':'#3b82f6';
+    else cell.style.background='white';
+    renderYearView();
   };
 
-  const startDrag = (ev)=>{
-    ev.preventDefault();
-    selecting=true;
-    dragParent=parentSelect.value;
-    applyCell(dayDiv);
-  };
+  // PC dragging
+  dayDiv.addEventListener('mousedown',(ev)=>{ selecting=true; dragParent=parentSelect.value; applyCell(dayDiv); });
+  dayDiv.addEventListener('mouseenter',(ev)=>{ if(selecting) applyCell(dayDiv); });
 
-  const moveDrag = (ev)=>{
-    if(!selecting) return;
-    const touch = ev.touches ? ev.touches[0] : null;
-    const x = touch ? touch.clientX : ev.clientX;
-    const y = touch ? touch.clientY : ev.clientY;
-    const el = document.elementFromPoint(x, y)?.closest('.day');
+  // Mobile dragging
+  dayDiv.addEventListener('touchstart',(ev)=>{ selecting=true; dragParent=parentSelect.value; applyCell(dayDiv); ev.preventDefault(); });
+  dayDiv.addEventListener('touchmove',(ev)=>{
+    const touch=ev.touches[0];
+    const el=document.elementFromPoint(touch.clientX,touch.clientY)?.closest('.day');
     if(el) applyCell(el);
-  };
+    ev.preventDefault();
+  });
 
-  const endDrag = ()=>{
-    if(selecting){
-      selecting=false;
-      dragParent=null;
-      save();
-      renderMonth();
-      renderYearView();
-    }
-  };
-
-  dayDiv.addEventListener('mousedown',startDrag);
-  dayDiv.addEventListener('touchstart',startDrag);
-
-  document.addEventListener('mousemove',moveDrag);
-  document.addEventListener('touchmove',moveDrag);
-
-  document.addEventListener('mouseup',endDrag);
-  document.addEventListener('touchend',endDrag);
+  document.addEventListener('mouseup',()=>{ if(selecting){ selecting=false; dragParent=null; save(); renderMonth(); } });
+  document.addEventListener('touchend',()=>{ if(selecting){ selecting=false; dragParent=null; save(); renderMonth(); } });
 
   return dayDiv;
 }
 
-function formatDate(d){ return d.toISOString().split("T")[0]; }
+function formatDate(d){ return d.toISOString().split('T')[0]; }
 
 // Year view
 function renderYearView(){
@@ -218,8 +195,9 @@ function renderYearView(){
     const weekStart=new Date(date);
     let counts={A:0,B:0};
     for(let d=0;d<7;d++){
-      const current=new Date(weekStart); current.setDate(current.getDate()+d); const dateStr=formatDate(current);
-      events.forEach(e=>{ if(dateStr===e.date) counts[e.parent]=(counts[e.parent]||0)+1; });
+      const current=new Date(weekStart); current.setDate(current.getDate()+d); 
+      const dateStr=formatDate(current);
+      events.forEach(e=>{ if(e.date===dateStr) counts[e.parent]=(counts[e.parent]||0)+1; });
     }
     let color='#ccc'; 
     if(counts.A>counts.B && counts.A>0) color='#ef4444'; 
