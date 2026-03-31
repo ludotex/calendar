@@ -131,7 +131,7 @@ let currentMonth = new Date();
 
 let selecting = false;
 let dragParent = null;
-let lastTouchedCell = null;
+let lastTouchedDate = null;
 
 const weekdays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
@@ -217,14 +217,16 @@ function createDay(dateStr,label){
   paint(div,dateStr);
 
   const apply = (cell)=>{
-    if(!dragParent) return;
+    if(!dragParent || !cell) return;
 
-    // prevent blinking
-    if(lastTouchedCell === cell) return;
-    lastTouchedCell = cell;
+    const date = cell.dataset.date;
 
-    toggleCell(cell.dataset.date,dragParent);
-    paint(cell,cell.dataset.date);
+    // FIX: prevent repeat only per date
+    if(lastTouchedDate === date) return;
+    lastTouchedDate = date;
+
+    toggleCell(date,dragParent);
+    paint(cell,date);
     renderYearView();
   };
 
@@ -232,7 +234,7 @@ function createDay(dateStr,label){
   div.addEventListener('mousedown',()=>{
     selecting=true;
     dragParent=parentSelect.value;
-    lastTouchedCell=null;
+    lastTouchedDate=null;
     apply(div);
   });
 
@@ -244,7 +246,7 @@ function createDay(dateStr,label){
   div.addEventListener('touchstart',(e)=>{
     selecting=true;
     dragParent=parentSelect.value;
-    lastTouchedCell=null;
+    lastTouchedDate=null;
     apply(div);
     e.preventDefault();
   });
@@ -267,7 +269,7 @@ function endDrag(){
   if(selecting){
     selecting=false;
     dragParent=null;
-    lastTouchedCell=null;
+    lastTouchedDate=null;
     save();
     renderMonth();
   }
