@@ -86,21 +86,23 @@ let dragParent = null;
 
 const weekdays=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
+// Firestore sync
 onSnapshot(ref, (docSnap)=>{
   if(docSnap.exists()){
-    events=docSnap.data().events||[];
+    events = docSnap.data().events || [];
     renderMonth();
     renderYearView();
   }
 });
 
+// Save to Firebase
 function save(){ setDoc(ref,{events},{merge:true}); }
 
-// navigation
-window.prev = function() { currentMonth.setDate(1); currentMonth.setMonth(currentMonth.getMonth()-1); renderMonth(); renderYearView(); };
-window.next = function() { currentMonth.setDate(1); currentMonth.setMonth(currentMonth.getMonth()+1); renderMonth(); renderYearView(); };
+// Navigation
+window.prev = function(){ currentMonth.setDate(1); currentMonth.setMonth(currentMonth.getMonth()-1); renderMonth(); renderYearView(); };
+window.next = function(){ currentMonth.setDate(1); currentMonth.setMonth(currentMonth.getMonth()+1); renderMonth(); renderYearView(); };
 
-// toggle logic for a single cell
+// Toggle a cell
 function toggleCell(date,parent){
   const idx = events.findIndex(e=>e.date===date);
   if(idx>=0){
@@ -114,15 +116,24 @@ function toggleCell(date,parent){
   }
 }
 
+// Render month
 function renderMonth(){
-  calendarEl.innerHTML=""; weekdayRow.innerHTML="";
-  weekdays.forEach(d=>{ const div=document.createElement('div'); div.textContent=d; weekdayRow.appendChild(div); });
-  const year=currentMonth.getFullYear(),month=currentMonth.getMonth();
+  calendarEl.innerHTML="";
+  weekdayRow.innerHTML="";
+  weekdays.forEach(d=>{
+    const div=document.createElement('div');
+    div.textContent=d;
+    weekdayRow.appendChild(div);
+  });
+
+  const year=currentMonth.getFullYear();
+  const month=currentMonth.getMonth();
   monthLabel.textContent=currentMonth.toLocaleString('default',{month:'long',year:'numeric'});
   const firstDay=new Date(year,month,1).getDay();
   const startOffset=(firstDay+6)%7;
   const daysInMonth=new Date(year,month+1,0).getDate();
-  for(let i=0;i<startOffset;i++) calendarEl.appendChild(document.createElement("div"));
+
+  for(let i=0;i<startOffset;i++) calendarEl.appendChild(document.createElement('div'));
   for(let day=1;day<=daysInMonth;day++){
     const dateObj=new Date(year,month,day);
     const dateStr=formatDate(dateObj);
@@ -130,13 +141,14 @@ function renderMonth(){
   }
 }
 
-// create day cell
+// Create day cell with drag
 function createDayDiv(dateStr,label){
-  const dayDiv=document.createElement("div"); 
-  dayDiv.classList.add("day"); 
+  const dayDiv=document.createElement('div'); 
+  dayDiv.classList.add('day'); 
   dayDiv.dataset.date=dateStr;
-  const dayNumber=document.createElement("div"); 
-  dayNumber.classList.add("day-number"); 
+
+  const dayNumber=document.createElement('div'); 
+  dayNumber.classList.add('day-number'); 
   dayNumber.textContent=label; 
   dayDiv.appendChild(dayNumber);
 
@@ -147,27 +159,29 @@ function createDayDiv(dateStr,label){
     dayDiv.appendChild(ev);
   }
 
-  const applyCell=(cell)=>{
-    if(!dragParent) return;
+  const applyCell = (cell)=>{
+    if(!dragParent || !cell.classList.contains('day')) return;
     toggleCell(cell.dataset.date, dragParent);
     renderMonth();
   };
 
-  const startDrag=(ev)=>{
+  const startDrag = (ev)=>{
     ev.preventDefault();
     selecting=true;
     dragParent=parentSelect.value;
     applyCell(dayDiv);
   };
 
-  const moveDrag=(ev)=>{
+  const moveDrag = (ev)=>{
     if(!selecting) return;
     const touch = ev.touches ? ev.touches[0] : null;
-    const el = touch ? document.elementFromPoint(touch.clientX,touch.clientY) : ev.target;
+    const x = touch ? touch.clientX : ev.clientX;
+    const y = touch ? touch.clientY : ev.clientY;
+    const el = document.elementFromPoint(x,y);
     if(el && el.classList.contains('day')) applyCell(el);
   };
 
-  const endDrag=()=>{
+  const endDrag = ()=>{
     if(selecting){
       selecting=false;
       dragParent=null;
@@ -178,11 +192,12 @@ function createDayDiv(dateStr,label){
   };
 
   dayDiv.addEventListener('mousedown',startDrag);
-  document.addEventListener('mousemove',(ev)=>{ if(selecting) moveDrag(ev); });
-  document.addEventListener('mouseup',endDrag);
-
   dayDiv.addEventListener('touchstart',startDrag);
-  document.addEventListener('touchmove',(ev)=>{ if(selecting) moveDrag(ev); });
+
+  document.addEventListener('mousemove',moveDrag);
+  document.addEventListener('touchmove',moveDrag);
+
+  document.addEventListener('mouseup',endDrag);
   document.addEventListener('touchend',endDrag);
 
   return dayDiv;
@@ -190,7 +205,7 @@ function createDayDiv(dateStr,label){
 
 function formatDate(d){ return d.toISOString().split("T")[0]; }
 
-// year view
+// Year view
 function renderYearView(){
   yearViewContainer.innerHTML='';
   const year=currentMonth.getFullYear();
