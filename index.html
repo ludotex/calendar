@@ -111,6 +111,14 @@ input:checked + .slider:before { transform:translateX(26px); }
 .month-label { width:30px; font-size:10px; }
 .week-square { width:8px; height:12px; margin-right:1px; }
 
+/* Parent counts */
+#countsContainer {
+  margin-top:10px;
+  text-align:center;
+  font-weight:bold;
+  font-size:14px;
+}
+
 @media(max-width:500px){
   .day { height:40px; }
 }
@@ -124,13 +132,13 @@ input:checked + .slider:before { transform:translateX(26px); }
 <h1>Kids Schedule</h1>
 
 <div class="card">
-<div class="switch-container">
-  <span class="switch-label">Lock editing</span>
-  <label class="switch">
-    <input type="checkbox" id="lockToggle" checked>
-    <span class="slider"></span>
-  </label>
-</div>
+  <div class="switch-container">
+    <span class="switch-label">Lock editing</span>
+    <label class="switch">
+      <input type="checkbox" id="lockToggle" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
   <select id="parent">
     <option value="A">Natacha</option>
     <option value="B">Ludo</option>
@@ -148,6 +156,10 @@ input:checked + .slider:before { transform:translateX(26px); }
 
 <h3 style="text-align:center">Year Overview</h3>
 <div id="yearViewContainer"></div>
+
+<div id="countsContainer">
+  Natacha: <span id="countA">0</span> days | Ludo: <span id="countB">0</span> days
+</div>
 
 </div>
 
@@ -178,6 +190,9 @@ const weekdayRow = document.getElementById("weekdayRow");
 const yearViewContainer = document.getElementById("yearViewContainer");
 const lockToggle = document.getElementById("lockToggle");
 
+const countAEl = document.getElementById("countA");
+const countBEl = document.getElementById("countB");
+
 let events = [];
 let currentMonth = new Date();
 let selecting = false;
@@ -192,6 +207,7 @@ onSnapshot(ref, (docSnap)=>{
     events = docSnap.data().events || [];
     renderMonth();
     renderYearView();
+    updateCounts();
   }
 });
 
@@ -279,6 +295,8 @@ function renderMonth(){
       }
     }
   }
+
+  updateCounts();
 }
 
 // Create day cell
@@ -303,6 +321,7 @@ function createDay(dateStr,label){
     toggleCell(date,dragParent);
     paint(cell,date);
     renderYearView();
+    updateCounts();
   };
 
   div.addEventListener('mousedown',()=>{
@@ -416,6 +435,18 @@ function createMonthRow(name){
 
 function formatDate(d){
   return d.toISOString().split('T')[0];
+}
+
+// Count days for each parent
+function updateCounts(){
+  let countA = 0;
+  let countB = 0;
+  events.forEach(e=>{
+    if(e.parent==='A') countA++;
+    if(e.parent==='B') countB++;
+  });
+  countAEl.textContent = countA;
+  countBEl.textContent = countB;
 }
 
 renderMonth();
