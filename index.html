@@ -158,7 +158,8 @@ input:checked + .slider:before { transform:translateX(26px); }
 <div id="yearViewContainer"></div>
 
 <div id="countsContainer">
-  Natacha: <span id="countA">0</span> days | Ludo: <span id="countB">0</span> days
+  <span style="color:#ef4444;">Natacha: <span id="countA">0</span></span> | 
+  <span style="color:#3b82f6;">Ludo: <span id="countB">0</span></span>
 </div>
 
 </div>
@@ -423,6 +424,7 @@ function renderYearView(){
   yearViewContainer.appendChild(row);
 }
 
+// Month row for year view
 function createMonthRow(name){
   const row=document.createElement('div');
   row.className='month-row';
@@ -449,8 +451,10 @@ function updateCounts(){
   countBEl.textContent = countB;
 }
 
+// Initial render
 renderMonth();
 renderYearView();
+updateCounts();
 
 </script>
 </body>
