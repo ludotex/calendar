@@ -33,7 +33,7 @@ select {
 /* Calendar grid with extra column for week numbers */
 .calendar {
   display:grid;
-  grid-template-columns:28px repeat(7,1fr);
+  grid-template-columns:28px repeat(7,1fr); /* first column is week number */
   gap:2px;
 }
 
@@ -69,6 +69,8 @@ select {
   font-size:10px;
   font-weight:bold;
   color:#333;
+  background:#e0e0e0;
+  border-radius:4px;
 }
 
 /* Year */
@@ -90,6 +92,9 @@ select {
 <h1>Kids Schedule</h1>
 
 <div class="card">
+<label>
+  <input type="checkbox" id="lockToggle" /> Lock editing
+</label>
 <select id="parent">
   <option value="A">Natacha</option>
   <option value="B">Ludo</option>
@@ -136,6 +141,7 @@ const calendarEl = document.getElementById("calendar");
 const monthLabel = document.getElementById("monthLabel");
 const weekdayRow = document.getElementById("weekdayRow");
 const yearViewContainer = document.getElementById("yearViewContainer");
+const lockToggle = document.getElementById("lockToggle");
 
 let events = [];
 let currentMonth = new Date();
@@ -174,6 +180,7 @@ window.next = ()=>{
 
 // Toggle logic
 function toggleCell(date,parent){
+  if(lockToggle.checked) return; // locked → no changes
   const i = events.findIndex(e=>e.date===date);
   if(i>=0){
     if(events[i].parent===parent) events.splice(i,1);
@@ -198,7 +205,8 @@ function renderMonth(){
   weekdayRow.innerHTML="";
 
   // empty top-left corner
-  weekdayRow.appendChild(document.createElement('div'));
+  const empty = document.createElement('div');
+  weekdayRow.appendChild(empty);
 
   weekdays.forEach(d=>{
     const div=document.createElement('div');
@@ -208,7 +216,6 @@ function renderMonth(){
 
   const year=currentMonth.getFullYear();
   const month=currentMonth.getMonth();
-
   monthLabel.textContent=currentMonth.toLocaleString('default',{month:'long',year:'numeric'});
 
   const firstDay=new Date(year,month,1).getDay();
@@ -216,12 +223,10 @@ function renderMonth(){
   const days=new Date(year,month+1,0).getDate();
 
   let dayCounter = 1;
-
   const totalCells = offset + days;
   const totalRows = Math.ceil(totalCells / 7);
 
   for(let row=0; row<totalRows; row++){
-
     const monday = new Date(year, month, dayCounter - ((new Date(year, month, dayCounter).getDay()+6)%7));
     const weekDiv=document.createElement('div');
     weekDiv.className='week-num';
@@ -229,11 +234,10 @@ function renderMonth(){
     calendarEl.appendChild(weekDiv);
 
     for(let col=0; col<7; col++){
-
       const cellIndex = row*7 + col;
-
       if(cellIndex < offset || dayCounter > days){
-        calendarEl.appendChild(document.createElement('div'));
+        const emptyCell = document.createElement('div');
+        calendarEl.appendChild(emptyCell);
       } else {
         const dateObj=new Date(year,month,dayCounter);
         const dateStr=formatDate(dateObj);
@@ -258,6 +262,7 @@ function createDay(dateStr,label){
   paint(div,dateStr);
 
   const apply = (cell)=>{
+    if(lockToggle.checked) return; // locked
     if(!dragParent || !cell) return;
     const date = cell.dataset.date;
     if(lastTouchedDate === date) return;
@@ -317,7 +322,7 @@ function paint(cell,date){
   else cell.style.background = e.parent==='A'?'#ef4444':'#3b82f6';
 }
 
-// Year view (unchanged)
+// Year view
 function renderYearView(){
   yearViewContainer.innerHTML='';
   const year=currentMonth.getFullYear();
