@@ -316,24 +316,24 @@ function renderYearView(){
 
   let date=new Date(year,0,1);
   const day=date.getDay();
-  date.setDate(date.getDate()+((8-day)%7));
+  date.setDate(date.getDate()+((8-day)%7)); // first Monday
 
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  for(let w=0; w<52; w++){
 
-  let currentMonthIndex=date.getMonth();
-  let row=createMonthRow(months[currentMonthIndex]);
-
-  for(let w=0;w<52;w++){
+    const row=document.createElement('div');
+    row.style.display='flex';
+    row.style.alignItems='center';
 
     const weekStart=new Date(date);
 
-    // week number
+    // Week number
     const weekNum=document.createElement('div');
     weekNum.className='week-number';
     weekNum.textContent=getWeekNumber(weekStart);
     row.appendChild(weekNum);
 
-    let A=0,B=0;
+    // Count days
+    let A=0, B=0;
 
     for(let i=0;i<7;i++){
       const d=new Date(weekStart);
@@ -355,20 +355,14 @@ function renderYearView(){
     const sq=document.createElement('div');
     sq.className='week-square';
     sq.style.background=color;
+
     row.appendChild(sq);
 
+    yearViewContainer.appendChild(row);
+
     date.setDate(date.getDate()+7);
-
-    if(date.getMonth()!==currentMonthIndex){
-      yearViewContainer.appendChild(row);
-      currentMonthIndex=date.getMonth();
-      row=createMonthRow(months[currentMonthIndex]);
-    }
   }
-
-  yearViewContainer.appendChild(row);
 }
-
 function createMonthRow(name){
   const row=document.createElement('div');
   row.className='month-row';
