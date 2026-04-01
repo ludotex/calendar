@@ -24,38 +24,6 @@ select {
   border-radius:8px;
 }
 
-/* Lock toggle switch */
-.switch-container { display:flex; align-items:center; margin-bottom:10px; gap:10px; }
-.switch-label { font-size:14px; font-weight:bold; }
-.switch {
-  position: relative;
-  display: inline-block;
-  width:50px;
-  height:24px;
-}
-.switch input { display:none; }
-.slider {
-  position:absolute;
-  cursor:pointer;
-  top:0; left:0; right:0; bottom:0;
-  background:#ccc;
-  border-radius:24px;
-  transition:.4s;
-}
-.slider:before {
-  position:absolute;
-  content:"";
-  height:18px;
-  width:18px;
-  left:3px;
-  bottom:3px;
-  background:white;
-  border-radius:50%;
-  transition:.4s;
-}
-input:checked + .slider { background:#ef4444; }
-input:checked + .slider:before { transform:translateX(26px); }
-
 .header {
   display:flex;
   justify-content:space-between;
@@ -111,14 +79,6 @@ input:checked + .slider:before { transform:translateX(26px); }
 .month-label { width:30px; font-size:10px; }
 .week-square { width:8px; height:12px; margin-right:1px; }
 
-/* Parent counts */
-#countsContainer {
-  margin-top:10px;
-  text-align:center;
-  font-weight:bold;
-  font-size:14px;
-}
-
 @media(max-width:500px){
   .day { height:40px; }
 }
@@ -132,13 +92,6 @@ input:checked + .slider:before { transform:translateX(26px); }
 <h1>Kids Schedule</h1>
 
 <div class="card">
-  <div class="switch-container">
-    <span class="switch-label">Lock editing</span>
-    <label class="switch">
-      <input type="checkbox" id="lockToggle" checked>
-      <span class="slider"></span>
-    </label>
-  </div>
   <select id="parent">
     <option value="A">Natacha</option>
     <option value="B">Ludo</option>
@@ -156,11 +109,6 @@ input:checked + .slider:before { transform:translateX(26px); }
 
 <h3 style="text-align:center">Year Overview</h3>
 <div id="yearViewContainer"></div>
-
-<div id="countsContainer">
-  <span style="color:#ef4444;">Natacha: <span id="countA">0</span></span> | 
-  <span style="color:#3b82f6;">Ludo: <span id="countB">0</span></span>
-</div>
 
 </div>
 
@@ -189,10 +137,6 @@ const calendarEl = document.getElementById("calendar");
 const monthLabel = document.getElementById("monthLabel");
 const weekdayRow = document.getElementById("weekdayRow");
 const yearViewContainer = document.getElementById("yearViewContainer");
-const lockToggle = document.getElementById("lockToggle");
-
-const countAEl = document.getElementById("countA");
-const countBEl = document.getElementById("countB");
 
 let events = [];
 let currentMonth = new Date();
@@ -208,7 +152,6 @@ onSnapshot(ref, (docSnap)=>{
     events = docSnap.data().events || [];
     renderMonth();
     renderYearView();
-    updateCounts();
   }
 });
 
@@ -231,7 +174,6 @@ window.next = ()=>{
 
 // Toggle logic
 function toggleCell(date,parent){
-  if(lockToggle.checked) return; // locked → no changes
   const i = events.findIndex(e=>e.date===date);
   if(i>=0){
     if(events[i].parent===parent) events.splice(i,1);
@@ -296,8 +238,6 @@ function renderMonth(){
       }
     }
   }
-
-  updateCounts();
 }
 
 // Create day cell
@@ -314,7 +254,6 @@ function createDay(dateStr,label){
   paint(div,dateStr);
 
   const apply = (cell)=>{
-    if(lockToggle.checked) return;
     if(!dragParent || !cell) return;
     const date = cell.dataset.date;
     if(lastTouchedDate === date) return;
@@ -322,7 +261,6 @@ function createDay(dateStr,label){
     toggleCell(date,dragParent);
     paint(cell,date);
     renderYearView();
-    updateCounts();
   };
 
   div.addEventListener('mousedown',()=>{
@@ -439,22 +377,9 @@ function formatDate(d){
   return d.toISOString().split('T')[0];
 }
 
-// Count days for each parent
-function updateCounts(){
-  let countA = 0;
-  let countB = 0;
-  events.forEach(e=>{
-    if(e.parent==='A') countA++;
-    if(e.parent==='B') countB++;
-  });
-  countAEl.textContent = countA;
-  countBEl.textContent = countB;
-}
-
 // Initial render
 renderMonth();
 renderYearView();
-updateCounts();
 
 </script>
 </body>
