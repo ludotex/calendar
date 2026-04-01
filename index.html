@@ -61,14 +61,39 @@ select {
   margin:5px 0;
 }
 
-/* Year */
+/* Year view */
 #yearViewContainer { margin-top:10px; }
-.month-row { display:flex; align-items:center; margin-bottom:2px; }
-.month-label { width:30px; font-size:10px; }
-.week-square { width:8px; height:12px; margin-right:1px; }
+
+.month-row {
+  display:flex;
+  align-items:center;
+  margin-bottom:2px;
+}
+
+.month-label {
+  width:28px;
+  font-size:10px;
+}
+
+/* NEW: week numbers */
+.week-number {
+  width:18px;
+  font-size:9px;
+  text-align:right;
+  margin-right:2px;
+  color:#333;
+}
+
+.week-square {
+  width:8px;
+  height:12px;
+  margin-right:1px;
+}
 
 @media(max-width:500px){
   .day { height:40px; }
+  .week-square { width:6px; height:10px; }
+  .week-number { font-size:8px; width:16px; }
 }
 </style>
 </head>
@@ -164,7 +189,6 @@ window.next = ()=>{
 // Toggle logic
 function toggleCell(date,parent){
   const i = events.findIndex(e=>e.date===date);
-
   if(i>=0){
     if(events[i].parent===parent) events.splice(i,1);
     else events[i].parent = parent;
@@ -173,7 +197,7 @@ function toggleCell(date,parent){
   }
 }
 
-// Render
+// Render month
 function renderMonth(){
   calendarEl.innerHTML="";
   weekdayRow.innerHTML="";
@@ -217,11 +241,9 @@ function createDay(dateStr,label){
   paint(div,dateStr);
 
   const apply = (cell)=>{
-    if(!dragParent || !cell) return;
+    if(!dragParent) return;
 
     const date = cell.dataset.date;
-
-    // FIX: prevent repeat only per date
     if(lastTouchedDate === date) return;
     lastTouchedDate = date;
 
@@ -230,7 +252,6 @@ function createDay(dateStr,label){
     renderYearView();
   };
 
-  // PC
   div.addEventListener('mousedown',()=>{
     selecting=true;
     dragParent=parentSelect.value;
@@ -242,7 +263,6 @@ function createDay(dateStr,label){
     if(selecting) apply(div);
   });
 
-  // Mobile
   div.addEventListener('touchstart',(e)=>{
     selecting=true;
     dragParent=parentSelect.value;
@@ -261,7 +281,6 @@ function createDay(dateStr,label){
   return div;
 }
 
-// Stop drag
 document.addEventListener('mouseup',endDrag);
 document.addEventListener('touchend',endDrag);
 
@@ -275,11 +294,19 @@ function endDrag(){
   }
 }
 
-// Paint cell
 function paint(cell,date){
   const e = events.find(ev=>ev.date===date);
   if(!e) cell.style.background='white';
   else cell.style.background = e.parent==='A'?'#ef4444':'#3b82f6';
+}
+
+// ISO week number
+function getWeekNumber(d){
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1)/7);
 }
 
 // Year view
@@ -299,6 +326,13 @@ function renderYearView(){
   for(let w=0;w<52;w++){
 
     const weekStart=new Date(date);
+
+    // week number
+    const weekNum=document.createElement('div');
+    weekNum.className='week-number';
+    weekNum.textContent=getWeekNumber(weekStart);
+    row.appendChild(weekNum);
+
     let A=0,B=0;
 
     for(let i=0;i<7;i++){
